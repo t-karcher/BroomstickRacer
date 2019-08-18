@@ -1,35 +1,35 @@
-extends Node2D
+extends KinematicBody2D
 
-var dir : Vector2 = Vector2.ZERO
-var speed = 150
-var rail = 1
+var speed : Vector2 = Vector2(150,0)
+var current_lane = 1
+onready var tween = $Tween
+onready var anim = $AnimationPlayer
+export var offset : Vector2 = Vector2.ZERO
 
-const RAIL_HEIGHTS = [120, 300, 480]
+const LANE_HEIGHTS = [120, 300, 480]
 
 func _ready():
-	$simon_riding_broomstick/AnimationPlayer.play("idle")
-
+	restart_idle_animation()
+		
 func _process(delta):
-	var new_rail = rail
-	dir = Vector2(300,0)
-	if Input.is_action_pressed("ui_left"):
-		dir += Vector2(-speed,0)
-	if Input.is_action_pressed("ui_right"):
-		dir += Vector2(speed,0)
+	var new_lane = current_lane
 	if Input.is_action_just_pressed("ui_up"):
-		if rail > 0: new_rail = rail - 1
+		if current_lane > 0: new_lane = current_lane - 1
 	if Input.is_action_just_pressed("ui_down"):
-		if rail < 2: new_rail = rail + 1
+		if current_lane < 2: new_lane = current_lane + 1
 
-	if new_rail != rail:
-		var tween = Tween.new()
-		add_child(tween)
+	if new_lane != current_lane:
+		anim.stop(false)
 		tween.interpolate_property(
 			self, "position:y", 
-			self.position.y, RAIL_HEIGHTS[new_rail], 0.5, Tween.TRANS_QUART, Tween.EASE_OUT)
+			self.position.y, LANE_HEIGHTS[new_lane] + offset.y, 0.5, Tween.TRANS_QUART, Tween.EASE_OUT)
 		tween.start()
-		rail = new_rail
+		current_lane = new_lane
 
-	position += dir * delta
-	dir *= .9
+	if !tween.is_active():
+		position.y = LANE_HEIGHTS[current_lane] + offset.y
 
+	move_and_collide(speed * delta)
+
+func restart_idle_animation():
+	anim.play("idle")
